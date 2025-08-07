@@ -56,3 +56,21 @@ class Room:
             del self.player_names[player_id]
         self.active_players.discard(player_id)
         print(f"[Room {self.room_id}] {self.get_player_name(player_id)} disconnected")
+    
+    def determine_winner(p1_choice, p2_choice):
+        """Determine winner logic"""
+        if p1_choice == p2_choice:
+            return 0  # Draw
+        elif (p1_choice == 'rock' and p2_choice == 'scissors') or \
+            (p1_choice == 'scissors' and p2_choice == 'paper') or \
+            (p1_choice == 'paper' and p2_choice == 'rock'):
+            return 1  # Player 1 wins
+        else:
+            return 2  # Player 2 wins
+
+    def reset_game(self):
+        """Reset trạng thái game để chơi lại"""
+        self.scores = {1: 0, 2: 0}
+        self.round = 1
+        self.choices.clear()
+        # Không reset game_in_progress ở đây vì vẫn đang chơi
