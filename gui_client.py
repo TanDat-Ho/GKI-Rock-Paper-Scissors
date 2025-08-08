@@ -298,4 +298,214 @@ class RockPaperScissorsGUI:
             bg='#34495e'
         )
         self.room_label.pack(anchor=tk.W)
+    
+    def setup_game_frame(self, parent):
+        game_frame = tk.LabelFrame(
+            parent,
+            text="🎯 Game Controls",
+            font=('Arial', 12, 'bold'),
+            fg='#ecf0f1',
+            bg='#34495e',
+            bd=2
+        )
+        game_frame.pack(fill=tk.X, pady=(0, 10))
         
+        # Rounds selection (initially hidden)
+        self.rounds_frame = tk.Frame(game_frame, bg='#34495e')
+        
+        rounds_label = tk.Label(
+            self.rounds_frame,
+            text="Choose number of rounds:",
+            font=('Arial', 11),
+            fg='#ecf0f1',
+            bg='#34495e'
+        )
+        rounds_label.pack(pady=5)
+        
+        rounds_options_frame = tk.Frame(self.rounds_frame, bg='#34495e')
+        rounds_options_frame.pack(pady=5)
+        
+        self.rounds_var = tk.StringVar(value="3")
+        for rounds in ["3", "5", "7", "9", "11"]:
+            tk.Radiobutton(
+                rounds_options_frame,
+                text=f"{rounds} rounds",
+                variable=self.rounds_var,
+                value=rounds,
+                font=('Arial', 10),
+                fg='#ecf0f1',
+                bg='#34495e',
+                selectcolor='#2c3e50'
+            ).pack(side=tk.LEFT, padx=5)
+        
+        self.submit_rounds_btn = tk.Button(
+            self.rounds_frame,
+            text="✅ Confirm Rounds",
+            font=('Arial', 10, 'bold'),
+            bg='#3498db',
+            fg='white',
+            command=self.submit_rounds
+        )
+        self.submit_rounds_btn.pack(pady=5)
+        
+        # Game moves (initially hidden)
+        self.moves_frame = tk.Frame(game_frame, bg='#34495e')
+        
+        moves_label = tk.Label(
+            self.moves_frame,
+            text="Choose your move:",
+            font=('Arial', 14, 'bold'),
+            fg='#ecf0f1',
+            bg='#34495e'
+        )
+        moves_label.pack(pady=10)
+        
+        # Move buttons with emojis
+        moves_buttons_frame = tk.Frame(self.moves_frame, bg='#34495e')
+        moves_buttons_frame.pack(pady=10)
+        
+        self.rock_btn = tk.Button(
+            moves_buttons_frame,
+            text="🪨\nRock",
+            font=('Arial', 12, 'bold'),
+            bg='#95a5a6',
+            fg='white',
+            width=8,
+            height=3,
+            command=lambda: self.make_move('rock')
+        )
+        self.rock_btn.pack(side=tk.LEFT, padx=10)
+        
+        self.paper_btn = tk.Button(
+            moves_buttons_frame,
+            text="📄\nPaper",
+            font=('Arial', 12, 'bold'),
+            bg='#f39c12',
+            fg='white',
+            width=8,
+            height=3,
+            command=lambda: self.make_move('paper')
+        )
+        self.paper_btn.pack(side=tk.LEFT, padx=10)
+        
+        self.scissors_btn = tk.Button(
+            moves_buttons_frame,
+            text="✂️\nScissors",
+            font=('Arial', 12, 'bold'),
+            bg='#e74c3c',
+            fg='white',
+            width=8,
+            height=3,
+            command=lambda: self.make_move('scissors')
+        )
+        self.scissors_btn.pack(side=tk.LEFT, padx=10)
+        
+        # Replay frame (initially hidden)
+        self.replay_frame = tk.Frame(game_frame, bg='#34495e')
+        
+        replay_label = tk.Label(
+            self.replay_frame,
+            text="Do you want to play again?",
+            font=('Arial', 12, 'bold'),
+            fg='#ecf0f1',
+            bg='#34495e'
+        )
+        replay_label.pack(pady=10)
+        
+        replay_buttons_frame = tk.Frame(self.replay_frame, bg='#34495e')
+        replay_buttons_frame.pack(pady=5)
+        
+        self.yes_btn = tk.Button(
+            replay_buttons_frame,
+            text="✅ Yes",
+            font=('Arial', 11, 'bold'),
+            bg='#27ae60',
+            fg='white',
+            width=10,
+            command=lambda: self.replay_response('yes')
+        )
+        self.yes_btn.pack(side=tk.LEFT, padx=10)
+        
+        self.no_btn = tk.Button(
+            replay_buttons_frame,
+            text="❌ No",
+            font=('Arial', 11, 'bold'),
+            bg='#e74c3c',
+            fg='white',
+            width=10,
+            command=lambda: self.replay_response('no')
+        )
+        self.no_btn.pack(side=tk.LEFT, padx=10)
+        
+        # Initially hide all game frames
+        self.hide_all_game_frames()
+        self.name_frame.pack_forget()  # Hide name input initially
+        self.room_choice_frame.pack_forget()  # Hide room choice initially
+        self.room_name_frame.pack_forget()  # Hide room name input initially
+        self.room_list_frame.pack_forget()  # Hide room list initially
+        
+    def setup_log_frame(self, parent):
+        log_frame = tk.LabelFrame(
+            parent,
+            text="📝 Game Log",
+            font=('Arial', 12, 'bold'),
+            fg='#ecf0f1',
+            bg='#34495e',
+            bd=2
+        )
+        log_frame.pack(fill=tk.BOTH, expand=True)
+        
+        self.log_text = scrolledtext.ScrolledText(
+            log_frame,
+            height=12,
+            font=('Consolas', 10),
+            bg='#2c3e50',
+            fg='#ecf0f1',
+            insertbackground='#ecf0f1'
+        )
+        self.log_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        
+    def hide_all_game_frames(self):
+        self.rounds_frame.pack_forget()
+        self.moves_frame.pack_forget()
+        self.replay_frame.pack_forget()
+        
+    def show_name_input(self):
+        self.name_frame.pack(fill=tk.X, padx=10, pady=10)
+        self.name_entry.focus()
+        
+    def hide_name_input(self):
+        self.name_frame.pack_forget()
+        
+    def show_room_choice(self):
+        self.room_choice_frame.pack(fill=tk.X, padx=10, pady=10)
+        
+    def hide_room_choice(self):
+        self.room_choice_frame.pack_forget()
+        
+    def show_room_name_input(self):
+        self.hide_room_choice()
+        self.room_name_frame.pack(fill=tk.X, padx=10, pady=10)
+        self.room_name_entry.focus()
+        
+    def hide_room_name_input(self):
+        self.room_name_frame.pack_forget()
+        
+    def show_room_list(self):
+        self.hide_room_choice()
+        self.room_list_frame.pack(fill=tk.X, padx=10, pady=10)
+        
+    def hide_room_list(self):
+        self.room_list_frame.pack_forget()
+        
+    def show_rounds_selection(self):
+        self.hide_all_game_frames()
+        self.rounds_frame.pack(fill=tk.X, padx=10, pady=10)
+        
+    def show_moves_selection(self):
+        self.hide_all_game_frames()
+        self.moves_frame.pack(fill=tk.X, padx=10, pady=10)
+        
+    def show_replay_selection(self):
+        self.hide_all_game_frames()
+        self.replay_frame.pack(fill=tk.X, padx=10, pady=10)
