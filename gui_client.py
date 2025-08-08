@@ -153,7 +153,7 @@ class RockPaperScissorsGUI:
             command=lambda: self.send_choice('2')
         )
         self.join_room_btn.pack(side=tk.LEFT, padx=10)
-        def setup_status_frame(self, parent):
+    def setup_status_frame(self, parent):
         status_frame = tk.LabelFrame(
             parent,
             text="📊 Game Status",
