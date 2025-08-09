@@ -509,3 +509,107 @@ class RockPaperScissorsGUI:
     def show_replay_selection(self):
         self.hide_all_game_frames()
         self.replay_frame.pack(fill=tk.X, padx=10, pady=10)
+    
+    def log(self, message):
+        """Add message to log with timestamp"""
+        timestamp = time.strftime("[%H:%M:%S]")
+        self.log_text.insert(tk.END, f"{timestamp} {message}\n")
+        self.log_text.see(tk.END)
+        self.root.update_idletasks()
+        
+    def connect_to_server(self):
+        if self.connected:
+            return
+            
+        try:
+            host = self.host_entry.get()
+            port = int(self.port_entry.get())
+            
+            self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.client.connect((host, port))
+            self.connected = True
+            
+            self.status_label.config(text="Status: Connected", fg='#27ae60')
+            self.connect_btn.config(text="🔌 Connected", state='disabled', bg='#95a5a6')
+            
+            self.log(f"🔌 Connected to {host}:{port}")
+            
+            # Start receiving messages
+            threading.Thread(target=self.receive_messages, daemon=True).start()
+            
+        except Exception as e:
+            messagebox.showerror("Connection Error", f"Failed to connect: {e}")
+            self.log(f"❌ Connection failed: {e}")
+            
+    def receive_messages(self):
+        while self.connected:
+            try:
+                data = self.client.recv(1024).decode()
+                if not data:
+                    break
+                    
+                self.process_message(data)
+                
+            except Exception as e:
+                if self.connected:
+                    self.log(f"❌ Error receiving message: {e}")
+                break
+                
+        self.disconnect()
+        
+    def process_message(self, message):
+        """Process incoming messages and update GUI accordingly"""
+        self.log(f"📨 {message}")
+        
+        # Show name input when server asks for name
+        if "Please enter your name:" in message:
+            self.root.after(0, self.show_name_input)
+            return
+            
+        # Show room choice when server asks for choice
+        if "What would you like to do?" in message and "1. Create" in message:
+            self.root.after(0, self.show_room_choice)
+            return
+            
+        # Show room name input when server asks for room name
+        if "Enter room name:" in message:
+            self.root.after(0, self.show_room_name_input)
+            return
+            
+        # Process room list when server sends available rooms
+        if "Available Rooms:" in message and "Enter room number" in message:
+            self.root.after(0, lambda: self.process_room_list(message))
+            return
+            
+        # Handle "No available rooms" message
+        if "No available rooms" in message:
+            self.root.after(0, self.show_room_name_input)
+            return
+        
+        # Extract player and room info
+        if "You are Player" in message and "Room" in message:
+            parts = message.split()
+            for i, part in enumerate(parts):
+                if part == "Player":
+                    self.player_id = parts[i + 1]
+                if part == "Room":
+                    self.room_id = parts[i + 1]
+            self.room_label.config(text=f"Room: {self.room_id} | Player: {self.player_id}")
+            
+        # Show rounds selection for player 1
+        if "Please choose number of rounds" in message:
+            self.root.after(0, self.show_rounds_selection)
+            
+        # Show moves selection when round starts
+        if "Your move (rock/paper/scissors)" in message:
+            self.root.after(0, self.show_moves_selection)
+            
+        # Show replay selection
+        if "Do you want to play again?" in message:
+            self.root.after(0, self.show_replay_selection)
+            
+        # Hide game frames when game ends
+        if "Thanks for playing" in message or "Goodbye" in message:
+            self.root.after(0, self.hide_all_game_frames)
+            self.root.after(1000, self.disconnect)
+            
