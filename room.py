@@ -220,3 +220,78 @@ class Room:
         self.round = 1
         self.choices.clear()
         # Không reset game_in_progress ở đây vì vẫn đang chơi
+    def handle_replay(self):
+            """Xử lý việc hỏi chơi lại. Trả về True nếu chơi lại, False nếu không"""
+            replay_responses = {}
+            
+            print(f"[Room {self.room_id}] Asking players for replay...")
+            
+            # Gửi câu hỏi cho cả 2 người chơi
+            for pid, conn in self.players.items():
+                try:
+                    conn.sendall("\nDo you want to play again? (yes/no): ".encode())
+                    print(f"[Room {self.room_id}] Asked Player {pid} for replay")
+                except Exception as e:
+                    print(f"[Room {self.room_id}] Error asking Player {pid}: {e}")
+                    replay_responses[pid] = False
+                    continue
+            
+            # Nhận phản hồi từ cả 2 người chơi
+            for pid, conn in list(self.players.items()):
+                if pid not in self.players:  # Player đã disconnect
+                    replay_responses[pid] = False
+                    continue
+                    
+                try:
+                    print(f"[Room {self.room_id}] Waiting for Player {pid} response...")
+                    response = conn.recv(1024).decode().strip().lower()
+                    print(f"[Room {self.room_id}] Player {pid} responded: {response}")
+                    replay_responses[pid] = response in ['yes', 'y', '1']
+                except Exception as e:
+                    print(f"[Room {self.room_id}] Error receiving from Player {pid}: {e}")
+                    replay_responses[pid] = False
+            
+            print(f"[Room {self.room_id}] Replay responses: {replay_responses}")
+            
+            # Kiểm tra nếu cả 2 đều đồng ý
+            if len(replay_responses) == 2 and all(replay_responses.values()):
+                # Reset game và chơi lại
+                print(f"[Room {self.room_id}] Both players agreed to replay!")
+                self.reset_game()
+                for pid, conn in self.players.items():
+                    try:
+                        conn.sendall("Both players agreed! Starting new game...\n".encode())
+                        print(f"[Room {self.room_id}] Sent replay confirmation to Player {pid}")
+                    except Exception as e:
+                        print(f"[Room {self.room_id}] Error sending confirmation to Player {pid}: {e}")
+                        return False
+                return True  # Chơi lại
+            else:
+                # Kết thúc và đóng kết nối
+                print(f"[Room {self.room_id}] Not all players agreed, ending game...")
+                for pid, conn in list(self.players.items()):
+                    try:
+                        if pid not in replay_responses or not replay_responses[pid]:
+                            conn.sendall("Thanks for playing! Goodbye!\n".encode())
+                        else:
+                            conn.sendall("Other player declined. Thanks for playing! Goodbye!\n".encode())
+                    except Exception as e:
+                        print(f"[Room {self.room_id}] Error sending goodbye to Player {pid}: {e}")
+                    
+                    try:
+                        conn.close()
+                    except Exception as e:
+                        print(f"[Room {self.room_id}] Error closing connection for Player {pid}: {e}")
+                        
+                # Clear players dict
+                self.players.clear()
+                self.player_names.clear()
+                self.active_players.clear()
+                return False  # Không chơi lại
+
+    def reset_game(self):
+        """Reset trạng thái game để chơi lại"""
+        self.scores = {1: 0, 2: 0}
+        self.round = 1
+        self.choices.clear()
+            # Không reset game_in_progress ở đây vì vẫn đang chơi
