@@ -509,3 +509,255 @@ class RockPaperScissorsGUI:
     def show_replay_selection(self):
         self.hide_all_game_frames()
         self.replay_frame.pack(fill=tk.X, padx=10, pady=10)
+        
+def setup_connection_frame_change(self, parent):
+        conn_frame = tk.LabelFrame(
+            parent,
+            text="🌐 Connection",
+            font=('Arial', 12, 'bold'),
+            fg='#ecf0f1',
+            bg='#34495e',
+            bd=2
+        )
+        conn_frame.pack(fill=tk.X, pady=(0, 10))
+        
+            
+        # Server input
+        input_frame = tk.Frame(conn_frame, bg='#34495e')
+        input_frame.pack(fill=tk.X, padx=10, pady=5)
+        
+        tk.Label(input_frame, text="Server:", font=('Arial', 10), fg='#ecf0f1', bg='#34495e').pack(side=tk.LEFT)
+        self.host_entry = tk.Entry(input_frame, font=('Arial', 10))
+        self.host_entry.insert(0, "172.20.10.4")
+        self.host_entry.pack(side=tk.LEFT, padx=(5, 10))
+        
+        tk.Label(input_frame, text="Port:", font=('Arial', 10), fg='#ecf0f1', bg='#34495e').pack(side=tk.LEFT)
+        self.port_entry = tk.Entry(input_frame, font=('Arial', 10), width=8)
+        self.port_entry.insert(0, "65433")
+        self.port_entry.pack(side=tk.LEFT, padx=(5, 10))
+        
+        # Connect button
+        self.connect_btn = tk.Button(
+            input_frame,
+            text="🔌 Connect",
+            font=('Arial', 10, 'bold'),
+            bg='#27ae60',
+            fg='white',
+            command=self.connect_to_server,
+            padx=20
+        )
+        self.connect_btn.pack(side=tk.RIGHT)
+        
+        # Player name input (initially hidden)
+        self.name_frame = tk.Frame(conn_frame, bg='#34495e')
+        
+        tk.Label(
+            self.name_frame, 
+            text="Enter your name:", 
+            font=('Arial', 10, 'bold'), 
+            fg='#ecf0f1', 
+            bg='#34495e'
+        ).pack(pady=5)
+        
+        name_input_frame = tk.Frame(self.name_frame, bg='#34495e')
+        name_input_frame.pack(pady=5)
+        
+        self.name_entry = tk.Entry(
+            name_input_frame, 
+            font=('Arial', 12), 
+            width=20
+        )
+        self.name_entry.pack(side=tk.LEFT, padx=5)
+        self.name_entry.bind('<Return>', lambda event: self.submit_name())
+        
+        self.submit_name_btn = tk.Button(
+            name_input_frame,
+            text="✅ Submit",
+            font=('Arial', 10, 'bold'),
+            bg='#3498db',
+            fg='white',
+            command=self.submit_name
+        )
+        self.submit_name_btn.pack(side=tk.LEFT, padx=5)
+        
+        # Room choice frame (initially hidden)
+        self.room_choice_frame = tk.Frame(conn_frame, bg='#34495e')
+        
+        choice_label = tk.Label(
+            self.room_choice_frame,
+            text="What would you like to do?",
+            font=('Arial', 12, 'bold'),
+            fg='#ecf0f1',
+            bg='#34495e'
+        )
+        choice_label.pack(pady=10)
+        
+        choice_buttons_frame = tk.Frame(self.room_choice_frame, bg='#34495e')
+        choice_buttons_frame.pack(pady=5)
+        
+        self.create_room_btn = tk.Button(
+            choice_buttons_frame,
+            text="🏠 Create New Room",
+            font=('Arial', 11, 'bold'),
+            bg='#3498db',
+            fg='white',
+            width=18,
+            command=lambda: self.send_choice('1')
+        )
+        self.create_room_btn.pack(side=tk.LEFT, padx=10)
+        
+        self.join_room_btn = tk.Button(
+            choice_buttons_frame,
+            text="🚪 Join Existing Room",
+            font=('Arial', 11, 'bold'),
+            bg='#9b59b6',
+            fg='white',
+            width=18,
+            command=lambda: self.send_choice('2')
+        )
+        self.join_room_btn.pack(side=tk.LEFT, padx=10)
+                
+        # Room name input frame (initially hidden)
+        self.room_name_frame = tk.Frame(conn_frame, bg='#34495e')
+        
+        tk.Label(
+            self.room_name_frame,
+            text="Enter room name:",
+            font=('Arial', 10, 'bold'),
+            fg='#ecf0f1',
+            bg='#34495e'
+        ).pack(pady=5)
+        
+        room_name_input_frame = tk.Frame(self.room_name_frame, bg='#34495e')
+        room_name_input_frame.pack(pady=5)
+        
+        self.room_name_entry = tk.Entry(
+            room_name_input_frame,
+            font=('Arial', 12),
+            width=20
+        )
+        self.room_name_entry.pack(side=tk.LEFT, padx=5)
+        self.room_name_entry.bind('<Return>', lambda event: self.submit_room_name())
+        
+        self.submit_room_name_btn = tk.Button(
+            room_name_input_frame,
+            text="✅ Create Room",
+            font=('Arial', 10, 'bold'),
+            bg='#3498db',
+            fg='white',
+            command=self.submit_room_name
+        )
+        self.submit_room_name_btn.pack(side=tk.LEFT, padx=5)
+        
+        # Room list frame (initially hidden)
+        self.room_list_frame = tk.Frame(conn_frame, bg='#34495e')
+        
+        tk.Label(
+            self.room_list_frame,
+            text="🏠 Available Rooms - Click to Join",
+            font=('Arial', 12, 'bold'),
+            fg='#ecf0f1',
+            bg='#34495e'
+        ).pack(pady=5)
+        
+        # Instructions
+        instructions = tk.Label(
+            self.room_list_frame,
+            text="💡 Double-click a room to join, or select and click 'Join Selected Room'",
+            font=('Arial', 9),
+            fg='#bdc3c7',
+            bg='#34495e'
+        )
+        instructions.pack(pady=(0, 5))
+        
+        # Scrollable listbox for rooms
+        room_list_container = tk.Frame(self.room_list_frame, bg='#34495e')
+        room_list_container.pack(pady=5, fill=tk.BOTH, expand=True)
+        
+        self.room_listbox = tk.Listbox(
+            room_list_container,
+            font=('Consolas', 10),  # Monospace for better alignment
+            height=6,
+            bg='#2c3e50',
+            fg='#ecf0f1',
+            selectbackground='#3498db',
+            selectforeground='#ffffff',
+            activestyle='dotbox',
+            bd=0,
+            highlightthickness=0
+        )
+        self.room_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(5, 0))
+        
+        # Bind double-click to join room
+        self.room_listbox.bind('<Double-Button-1>', lambda e: self.join_selected_room())
+        
+        room_scrollbar = tk.Scrollbar(room_list_container, bg='#34495e')
+        room_scrollbar.pack(side=tk.RIGHT, fill=tk.Y, padx=(0, 5))
+        
+        self.room_listbox.config(yscrollcommand=room_scrollbar.set)
+        room_scrollbar.config(command=self.room_listbox.yview)
+        
+        # Button frame
+        button_frame = tk.Frame(self.room_list_frame, bg='#34495e')
+        button_frame.pack(pady=10)
+        
+        self.join_selected_room_btn = tk.Button(
+            button_frame,
+            text="🚪 Join Selected Room",
+            font=('Arial', 11, 'bold'),
+            bg='#27ae60',
+            fg='white',
+            command=self.join_selected_room,
+            padx=20,
+            pady=5,
+            relief='flat',
+            bd=0
+        )
+        self.join_selected_room_btn.pack(side=tk.LEFT, padx=5)
+        
+        self.refresh_rooms_btn = tk.Button(
+            button_frame,
+            text="🔄 Refresh",
+            font=('Arial', 11, 'bold'),
+            bg='#3498db',
+            fg='white',
+            command=self.refresh_room_list,
+            padx=20,
+            pady=5,
+            relief='flat',
+            bd=0
+        )
+        self.refresh_rooms_btn.pack(side=tk.LEFT, padx=5)
+        
+    def setup_status_frame_change(self, parent):
+        status_frame = tk.LabelFrame(
+            parent,
+            text="📊 Game Status",
+            font=('Arial', 12, 'bold'),
+            fg='#ecf0f1',
+            bg='#34495e',
+            bd=2
+        )
+        status_frame.pack(fill=tk.X, pady=(0, 10))
+        
+        # Status labels
+        info_frame = tk.Frame(status_frame, bg='#34495e')
+        info_frame.pack(fill=tk.X, padx=10, pady=5)
+        
+        self.status_label = tk.Label(
+            info_frame,
+            text="Status: Disconnected",
+            font=('Arial', 11),
+            fg='#e74c3c',
+            bg='#34495e'
+        )
+        self.status_label.pack(anchor=tk.W)
+        
+        self.room_label = tk.Label(
+            info_frame,
+            text="Room: Not joined",
+            font=('Arial', 11),
+            fg='#ecf0f1',
+            bg='#34495e'
+        )
+        self.room_label.pack(anchor=tk.W)
