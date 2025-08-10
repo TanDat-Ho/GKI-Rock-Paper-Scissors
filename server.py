@@ -70,9 +70,13 @@ def handle_client(conn, addr):
                 target_room.set_total_rounds(3)
                 conn.sendall("Invalid input. Set to default 3 rounds. Waiting for another player...\n".encode())
         else:
-            conn.sendall("Invalid choice or feature not implemented yet. Disconnecting...\n".encode())
+            conn.sendall("Invalid choice. Disconnecting...\n".encode())
             return
-        
+
+        # Chờ người chơi thứ 2 nếu là người tạo phòng
+        if not target_room.is_full():
+            print(f"[Room {target_room.room_id}] Waiting for second player. Current: {player_name}")
+            
     except Exception as e:
         print(f"Error handling client {addr}: {e}")
         # Xử lý disconnect
