@@ -612,4 +612,177 @@ class RockPaperScissorsGUI:
         if "Thanks for playing" in message or "Goodbye" in message:
             self.root.after(0, self.hide_all_game_frames)
             self.root.after(1000, self.disconnect)
+    def submit_name(self):
+        if self.connected and self.client:
+            name = self.name_entry.get().strip()
+            if name:
+                self.client.sendall((name + "\n").encode())
+                self.log(f"📤 Sent name: {name}")
+                self.hide_name_input()
+            else:
+                messagebox.showwarning("Invalid Name", "Please enter a valid name!")
+                
+    def send_choice(self, choice):
+        if self.connected and self.client:
+            self.client.sendall((choice + "\n").encode())
+            if choice == "1":
+                self.log(f"📤 Selected: Create new room")
+            else:
+                self.log(f"📤 Selected: Join existing room")
+            self.hide_room_choice()
+            
+    def submit_room_name(self):
+        if self.connected and self.client:
+            room_name = self.room_name_entry.get().strip()
+            if room_name:
+                self.client.sendall((room_name + "\n").encode())
+                self.log(f"📤 Creating room: {room_name}")
+                self.hide_room_name_input()
+            else:
+                # Send empty string to use default name
+                self.client.sendall("\n".encode())
+                self.log(f"📤 Creating room with default name")
+                self.hide_room_name_input()
+                
+    def process_room_list(self, message):
+        # Clear existing items
+        self.room_listbox.delete(0, tk.END)
+        
+        # Parse room list from message
+        lines = message.split('\n')
+        self.available_rooms = []  # Store room info for joining
+        
+        for line in lines:
+            line = line.strip()
+            # Look for numbered room entries like "1. TestRoom (by Dang) - 1/2 players - 3 rounds"
+            if line and line[0].isdigit() and '.' in line:
+                # Extract room info
+                parts = line.split('.', 1)
+                if len(parts) == 2:
+                    room_number = parts[0].strip()
+                    room_details = parts[1].strip()
+                    
+                    # Store room info for later use
+                    self.available_rooms.append({
+                        'number': int(room_number),
+                        'details': room_details,
+                        'full_line': line
+                    })
+                    
+                    # Parse room details for better display
+                    # Format: "TestRoom (by Dang) - 1/2 players - 3 rounds"
+                    try:
+                        if '(' in room_details and ')' in room_details:
+                            # Extract room name and creator
+                            name_part = room_details.split('(')[0].strip()
+                            creator_part = room_details.split('(')[1].split(')')[0]
+                            remaining = room_details.split(')', 1)[1] if ')' in room_details else ""
+                            
+                            # Format for display
+                            display_text = f"🏠 {name_part:<15} 👤 {creator_part:<10} {remaining.strip()}"
+                        else:
+                            display_text = f"🏠 {room_details}"
+                    except:
+                        display_text = f"🏠 {room_details}"
+                    
+                    self.room_listbox.insert(tk.END, display_text)
+                
+        if self.available_rooms:
+            self.show_room_list()
+            self.log(f"📋 Found {len(self.available_rooms)} available rooms")
+        else:
+            self.log("📭 No rooms available")
+            self.hide_room_list()
+            
+    def join_selected_room(self):
+        selection = self.room_listbox.curselection()
+        if selection and self.connected and self.client and hasattr(self, 'available_rooms'):
+            selected_index = selection[0]
+            if selected_index < len(self.available_rooms):
+                room_info = self.available_rooms[selected_index]
+                room_number = room_info['number']
+                
+                # Send room number to server
+                self.client.sendall((str(room_number) + "\n").encode())
+                
+                selected_room_text = room_info['details']
+                self.log(f"📤 Joining room: {selected_room_text}")
+                self.hide_room_list()
+            else:
+                messagebox.showwarning("Selection Error", "Invalid room selection!")
+        else:
+            messagebox.showwarning("No Selection", "Please select a room to join!")
+            
+    def refresh_room_list(self):
+        """Send request to server to get updated room list"""
+        if self.connected and self.client:
+            # Request fresh room list by choosing option 2 again
+            self.log("🔄 Refreshing room list...")
+            # This would require server-side support for refresh command
+            # For now, show message to user
+            messagebox.showinfo("Refresh", "To see updated rooms, please reconnect to the server.")
+        else:
+            messagebox.showwarning("Not Connected", "Please connect to server first!")
+                
+    def submit_rounds(self):
+        if self.connected and self.client:
+            rounds = self.rounds_var.get()
+            self.client.sendall((rounds + "\n").encode())
+            self.log(f"📤 Selected {rounds} rounds")
+            self.hide_all_game_frames()
+            
+    def make_move(self, move):
+        if self.connected and self.client:
+            self.client.sendall((move + "\n").encode())
+            self.log(f"📤 Played: {move}")
+            
+            # Disable move buttons temporarily
+            self.rock_btn.config(state='disabled')
+            self.paper_btn.config(state='disabled')
+            self.scissors_btn.config(state='disabled')
+            
+            # Re-enable after 2 seconds
+            self.root.after(2000, self.enable_move_buttons)
+            
+    def enable_move_buttons(self):
+        self.rock_btn.config(state='normal')
+        self.paper_btn.config(state='normal')
+        self.scissors_btn.config(state='normal')
+        
+    def replay_response(self, response):
+        if self.connected and self.client:
+            self.client.sendall((response + "\n").encode())
+            self.log(f"📤 Replay response: {response}")
+            self.hide_all_game_frames()
+            
+    def disconnect(self):
+        self.connected = False
+        if self.client:
+            try:
+                self.client.close()
+            except:
+                pass
+            
+        self.status_label.config(text="Status: Disconnected", fg='#e74c3c')
+        self.room_label.config(text="Room: Not joined")
+        self.connect_btn.config(text="🔌 Connect", state='normal', bg='#27ae60')
+        self.hide_all_game_frames()
+        self.hide_name_input()
+        self.hide_room_choice()
+        self.hide_room_name_input()
+        self.hide_room_list()
+        self.log("🔌 Disconnected from server")
+        
+    def on_closing(self):
+        self.disconnect()
+        self.root.destroy()
+
+def main():
+    root = tk.Tk()
+    app = RockPaperScissorsGUI(root)
+    root.protocol("WM_DELETE_WINDOW", app.on_closing)
+    root.mainloop()
+
+if __name__ == "__main__":
+    main()
             

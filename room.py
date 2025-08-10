@@ -56,17 +56,61 @@ class Room:
             del self.player_names[player_id]
         self.active_players.discard(player_id)
         print(f"[Room {self.room_id}] {self.get_player_name(player_id)} disconnected")
-    
-    def determine_winner(p1_choice, p2_choice):
-        """Determine winner logic"""
-        if p1_choice == p2_choice:
-            return 0  # Draw
-        elif (p1_choice == 'rock' and p2_choice == 'scissors') or \
-            (p1_choice == 'scissors' and p2_choice == 'paper') or \
-            (p1_choice == 'paper' and p2_choice == 'rock'):
-            return 1  # Player 1 wins
-        else:
-            return 2  # Player 2 wins
+
+    def check_connection(self, player_id):
+        """Kiểm tra kết nối của player"""
+        if player_id not in self.players:
+            return False
+        try:
+            conn = self.players[player_id]
+            # Thử gửi 1 byte để test connection
+            original_timeout = conn.gettimeout()
+            conn.settimeout(0.1)
+            conn.send(b'')
+            conn.settimeout(original_timeout)
+            return True
+        except (ConnectionResetError, ConnectionAbortedError, OSError):
+            # Connection đã đóng
+            return False
+        except Exception as e:
+            # Các lỗi khác, coi như connection vẫn OK
+            print(f"[Room {self.room_id}] Connection check warning for Player {player_id}: {e}")
+            return True
+        finally:
+            try:
+                conn.settimeout(original_timeout)
+            except:
+                pass
+
+    def handle_disconnect(self, disconnected_player_id):
+        """Xử lý khi có player disconnect"""
+        disconnected_name = self.get_player_name(disconnected_player_id)
+        print(f"[Room {self.room_id}] Handling disconnect for {disconnected_name}")
+        
+        # Remove player bị disconnect
+        self.remove_player(disconnected_player_id)
+        
+        # Thông báo cho player còn lại
+        remaining_player_id = 2 if disconnected_player_id == 1 else 1
+        if remaining_player_id in self.players:
+            remaining_name = self.get_player_name(remaining_player_id)
+            try:
+                self.players[remaining_player_id].sendall(
+                    f"\n{disconnected_name} has disconnected. You win by default!\nThanks for playing! Goodbye!\n".encode()
+                )
+                self.players[remaining_player_id].close()
+            except:
+                pass
+            self.remove_player(remaining_player_id)
+        
+        # Đánh dấu game kết thúc
+        self.game_in_progress = False
+        return True  # Phòng cần được dọn dẹp
+
+    def set_total_rounds(self, rounds):
+        """Set số vòng chơi cho phòng"""
+        self.total_rounds = rounds
+        self.waiting_for_rounds = False
 
     def run_game(self):
         # Kiểm tra nếu game đã bắt đầu rồi thì return
@@ -194,6 +238,17 @@ class Room:
             self.round += 1
             self.choices.clear()
 
+    def determine_winner(p1_choice, p2_choice):
+        """Determine winner logic"""
+        if p1_choice == p2_choice:
+            return 0  # Draw
+        elif (p1_choice == 'rock' and p2_choice == 'scissors') or \
+            (p1_choice == 'scissors' and p2_choice == 'paper') or \
+            (p1_choice == 'paper' and p2_choice == 'rock'):
+            return 1  # Player 1 wins
+        else:
+            return 2  # Player 2 wins
+
     def send_final_result(self):
         score1, score2 = self.scores[1], self.scores[2]
         player1_name = self.get_player_name(1)
@@ -214,12 +269,7 @@ class Room:
                 conn.sendall(msg.encode())
             except:
                 pass
-    def reset_game(self):
-        """Reset trạng thái game để chơi lại"""
-        self.scores = {1: 0, 2: 0}
-        self.round = 1
-        self.choices.clear()
-        # Không reset game_in_progress ở đây vì vẫn đang chơi
+
     def handle_replay(self):
             """Xử lý việc hỏi chơi lại. Trả về True nếu chơi lại, False nếu không"""
             replay_responses = {}
