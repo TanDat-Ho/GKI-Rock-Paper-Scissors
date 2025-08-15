@@ -58,14 +58,13 @@ class RockPaperScissorsGUI:
         )
         conn_frame.pack(fill=tk.X, pady=(0, 10))
         
-            
         # Server input
         input_frame = tk.Frame(conn_frame, bg='#34495e')
         input_frame.pack(fill=tk.X, padx=10, pady=5)
         
         tk.Label(input_frame, text="Server:", font=('Arial', 10), fg='#ecf0f1', bg='#34495e').pack(side=tk.LEFT)
         self.host_entry = tk.Entry(input_frame, font=('Arial', 10))
-        self.host_entry.insert(0, "172.20.10.4")
+        self.host_entry.insert(0, "127.0.0.1")
         self.host_entry.pack(side=tk.LEFT, padx=(5, 10))
         
         tk.Label(input_frame, text="Port:", font=('Arial', 10), fg='#ecf0f1', bg='#34495e').pack(side=tk.LEFT)
@@ -153,7 +152,7 @@ class RockPaperScissorsGUI:
             command=lambda: self.send_choice('2')
         )
         self.join_room_btn.pack(side=tk.LEFT, padx=10)
-                
+        
         # Room name input frame (initially hidden)
         self.room_name_frame = tk.Frame(conn_frame, bg='#34495e')
         
@@ -298,7 +297,7 @@ class RockPaperScissorsGUI:
             bg='#34495e'
         )
         self.room_label.pack(anchor=tk.W)
-    
+        
     def setup_game_frame(self, parent):
         game_frame = tk.LabelFrame(
             parent,
@@ -509,7 +508,7 @@ class RockPaperScissorsGUI:
     def show_replay_selection(self):
         self.hide_all_game_frames()
         self.replay_frame.pack(fill=tk.X, padx=10, pady=10)
-    
+        
     def log(self, message):
         """Add message to log with timestamp"""
         timestamp = time.strftime("[%H:%M:%S]")
@@ -612,6 +611,7 @@ class RockPaperScissorsGUI:
         if "Thanks for playing" in message or "Goodbye" in message:
             self.root.after(0, self.hide_all_game_frames)
             self.root.after(1000, self.disconnect)
+            
     def submit_name(self):
         if self.connected and self.client:
             name = self.name_entry.get().strip()

@@ -2,9 +2,7 @@ import socket
 import threading
 from room import Room
 
-# Để cho phép tất cả máy kết nối, sử dụng '0.0.0.0'
-# Hoặc sử dụng IP cụ thể của máy này nếu bạn biết
-HOST = 'localhost'  # Sử dụng localhost để test
+HOST = '127.0.0.1'
 PORT = 65433  # Thay đổi port để tránh xung đột
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -35,7 +33,7 @@ def handle_client(conn, addr):
             player_name = f"Player_{addr[1]}"
 
         print(f"[+] Player '{player_name}' connected from {addr}")
-        
+
         # Hỏi người chơi muốn tạo phòng hay tham gia phòng
         conn.sendall(f"Hello {player_name}! What would you like to do?\n1. Create a new room\n2. Join existing room\nEnter your choice (1 or 2): ".encode())
         
@@ -69,6 +67,7 @@ def handle_client(conn, addr):
                 print(f"Error setting rounds for {player_name}: {e}")
                 target_room.set_total_rounds(3)
                 conn.sendall("Invalid input. Set to default 3 rounds. Waiting for another player...\n".encode())
+                
         elif choice == "2":
             # Tham gia phòng có sẵn
             available_rooms = []
