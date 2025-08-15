@@ -69,7 +69,7 @@ def handle_client(conn, addr):
                 print(f"Error setting rounds for {player_name}: {e}")
                 target_room.set_total_rounds(3)
                 conn.sendall("Invalid input. Set to default 3 rounds. Waiting for another player...\n".encode())
-            elif choice == "2":
+        elif choice == "2":
             # Tham gia phòng có sẵn
             available_rooms = []
             with lock:
